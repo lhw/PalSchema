@@ -8,6 +8,7 @@
 #include "SDK/Classes/Async.h"
 #include "SDK/UnrealOffsets.h"
 #include "../version.h"
+#include "Platform.h"
 
 using namespace RC;
 using namespace RC::Unreal;
@@ -36,6 +37,13 @@ public:
         PS::Log<LogLevel::Verbose>(STR("Initializing SignatureManager...\n"));
         Palworld::SignatureManager::Initialize();
 
+#ifndef _WIN32
+        // Linux: load manual address overrides from PalSchema_Addresses.ini
+        PS::Log<LogLevel::Verbose>(STR("Loading manual addresses for Linux...\n"));
+        Palworld::SignatureManager::LoadManualAddresses(
+            UE4SSProgram::get_program().get_working_directory());
+#endif
+
         PS::Log<LogLevel::Verbose>(STR("Initializing UnrealOffsets...\n"));
         Palworld::UnrealOffsets::Initialize();
 
@@ -56,6 +64,7 @@ public:
         return fs::exists(MemberVariableLayoutFile);
     }
 
+#ifdef HAS_GUI
     auto render_schema_generator()
     {
         static bool bGeneratingSchemas = false;
@@ -94,6 +103,7 @@ public:
 
         PS::Log<LogLevel::Verbose>(STR("Finished registering Pal Schema tab for GUI Console.\n"));
     }
+#endif
 
     auto on_update() -> void override
     {
@@ -112,7 +122,6 @@ private:
 };
 
 
-#define PALSCHEMA_API __declspec(dllexport)
 extern "C"
 {
     PALSCHEMA_API RC::CppUserModBase* start_mod()

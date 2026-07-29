@@ -13,6 +13,7 @@ RC*
 
 # CMake
 build/
+build_linux/
 CMakeLists.txt.user
 CMakeCache.txt
 CMakeFiles

@@ -1,3 +1,7 @@
 [submodule "deps/RE-UE4SS"]
 	path = deps/RE-UE4SS
 	url = https://github.com/Okaetsu/RE-UE4SS.git
+[submodule "deps/ue4ss-linux"]
+	path = deps/ue4ss-linux
+	url = https://github.com/XarminaEu/ue4ss-linux.git
+	branch = linux-native

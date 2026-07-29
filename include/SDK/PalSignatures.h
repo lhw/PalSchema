@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <unordered_map>
 #include <string>
+#include <cstdint>
 
 namespace Palworld {
     class SignatureManager {
@@ -14,6 +15,8 @@ namespace Palworld {
     private:
         static inline std::unordered_map<std::string, void*> SignatureMap;
 
+#ifdef _WIN32
+        // Windows AOB patterns - byte sequences specific to the Windows Palworld binary
         static inline std::unordered_map<std::string, std::string> Signatures {
             // Blueprint Loader apply logic
             { "UBlueprintGeneratedClass::PostLoadDefaultObject", "48 89 5C 24 08 48 89 74 24 10 57 48 83 EC 30 48 8D 99 58 03 00 00" },
@@ -54,5 +57,14 @@ namespace Palworld {
             { "UPalItemSlot::UpdateItem_ServerInternal", "E8 ?? ?? ?? ?? 48 8B CB E8 ?? ?? ?? ?? 48 8B CB E8 ?? ?? ?? ?? 48 89 5C 24 48" },
             { "UWorld::CleanupWorld", "E8 ?? ?? ?? ?? 8B 55 A7 FF C2 49 83 C5 08 89 55 A7" },
         };
+#else
+        // Linux: AOB patterns are empty - will be populated from PalSchema_Addresses.ini
+        // or from AOB patterns provided by the user for their specific binary.
+        static inline std::unordered_map<std::string, std::string> Signatures {};
+        static inline std::unordered_map<std::string, std::string> SignaturesCallResolve {};
+#endif
+
+        // Load manual address overrides from PalSchema_Addresses.ini (Linux fallback)
+        static void LoadManualAddresses(const std::filesystem::path& working_directory);
     };
 }

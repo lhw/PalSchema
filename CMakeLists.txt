@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 
 set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 add_subdirectory(deps)
 
@@ -34,7 +35,33 @@ file(GLOB SRC_FILES CONFIGURE_DEPENDS
 )
 
 add_library(${TARGET} SHARED ${SRC_FILES})
-target_include_directories(${TARGET} PRIVATE 
+
+target_include_directories(${TARGET} PRIVATE
     include/
 )
-target_link_libraries(${TARGET} PRIVATE Zydis Zycore safetyhook nlohmann_json::nlohmann_json glaze::glaze UE4SS efsw)
+
+# UE4SS target provides all first-party libs, Zydis, Zycore, funchook/safetyhook transitively
+# On Windows: Zydis, Zycore, safetyhook come from RE-UE4SS deps
+# On Linux: Zydis, funchook come from ue4ss-linux deps
+target_link_libraries(${TARGET} PRIVATE
+    nlohmann_json::nlohmann_json
+    glaze::glaze
+    efsw
+    UE4SS
+)
+
+if(WIN32)
+    # Windows: no extra system libs needed beyond what UE4SS provides
+else()
+    # Linux: dlopen/dlsym for runtime symbol resolution
+    target_link_libraries(${TARGET} PRIVATE dl pthread)
+    # FORCE_U16 is already a PUBLIC define from UE4SS Linux, but ensure it's set
+    target_compile_definitions(${TARGET} PRIVATE FORCE_U16 PLATFORM_LINUX)
+endif()
+
+# Symbol visibility: ensure all exports are visible for UE4SS to dlopen
+set_target_properties(${TARGET} PROPERTIES
+    CXX_VISIBILITY_PRESET hidden
+    C_VISIBILITY_PRESET hidden
+    VISIBILITY_INLINES_HIDDEN ON
+)
