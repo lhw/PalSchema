@@ -1,16 +1,9 @@
 #pragma once
 
-#ifdef FORCE_U16
-#undef FORCE_U16
-#endif
-
 #include <HAL/Platform.hpp>
 #include <DynamicOutput/DynamicOutput.hpp>
 #include "Utility/Config.h"
-
-#ifdef PLATFORM_LINUX
-#define FORCE_U16
-#endif
+#include "Utility/PSFormat.h"
 
 namespace PS {
     template <RC::Unreal::int32 optional_arg, typename... FmtArgs>

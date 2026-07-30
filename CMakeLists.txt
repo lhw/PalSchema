@@ -57,6 +57,8 @@ else()
     target_link_libraries(${TARGET} PRIVATE dl pthread)
     # FORCE_U16 is already a PUBLIC define from UE4SS Linux, but ensure it's set
     target_compile_definitions(${TARGET} PRIVATE FORCE_U16 PLATFORM_LINUX)
+    # Suppress GCC warnings from UE4SS headers
+    target_compile_options(${TARGET} PRIVATE -Wno-changes-meaning -Wno-template-body)
 endif()
 
 # Symbol visibility: ensure all exports are visible for UE4SS to dlopen
