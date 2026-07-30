@@ -6,7 +6,15 @@
 #include "Loader/PalModLoaderBase.h"
 #include "Loader/Spawner/SpawnerInfo.h"
 #include "nlohmann/json.hpp"
+#ifdef _WIN32
 #include "safetyhook.hpp"
+#else
+struct SafetyHookInline {
+    template<typename... Args>
+    void call(Args&&...) {}
+    void disable() {}
+};
+#endif
 
 namespace RC::Unreal {
     class UWorld;

@@ -4,7 +4,15 @@
 #include "Loader/Blueprint/PalBlueprintMod.h"
 #include "Unreal/NameTypes.hpp"
 #include "Unreal/UObjectArray.hpp"
+#ifdef _WIN32
 #include "safetyhook.hpp"
+#else
+struct SafetyHookInline {
+    template<typename... Args>
+    void call(Args&&...) {}
+    void disable() {}
+};
+#endif
 #include <unordered_map>
 
 namespace UECustom {

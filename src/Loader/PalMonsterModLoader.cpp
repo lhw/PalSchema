@@ -37,7 +37,7 @@ namespace Palworld {
         });
 	}
 
-    void PalMonsterModLoader::OnAutoReload(const RC::StringType& modName, const std::filesystem::path& modFilePath)
+    void PalMonsterModLoader::OnAutoReload(const std::filesystem::path::string_type& modName, const std::filesystem::path& modFilePath)
     {
         PS::JsonHelpers::ParseJsonFileInPath(modFilePath, [&](const nlohmann::json& data) {
             LoadPals(data);
@@ -95,8 +95,8 @@ namespace Palworld {
             return nullptr;
         }
 
-        auto newPackageName = FName(std::format(TEXT("/PalSchema/SpawnItem/BP_Action_SpawnItem_{}"), characterId.ToString()));
-        auto newAssetName = FName(std::format(TEXT("BP_Action_SpawnItem_{}_C"), characterId.ToString()));
+        auto newPackageName = FName(fmt::format(TEXT("/PalSchema/SpawnItem/BP_Action_SpawnItem_{}"), characterId.ToString()));
+        auto newAssetName = FName(fmt::format(TEXT("BP_Action_SpawnItem_{}_C"), characterId.ToString()));
 
         if (auto cachedSpawnItemActionClass = m_cachedSpawnItemActionsByName.Find(newAssetName))
         {

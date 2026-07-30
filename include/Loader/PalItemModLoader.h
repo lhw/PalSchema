@@ -4,7 +4,15 @@
 #include "SDK/Classes/PalStaticItemDataAsset.h"
 #include "SDK/Classes/PalDynamicItemDataBase.h"
 #include "SDK/Structs/FPalItemId.h"
+#ifdef _WIN32
 #include "safetyhook.hpp"
+#else
+struct SafetyHookInline {
+    template<typename... Args>
+    void call(Args&&...) {}
+    void disable() {}
+};
+#endif
 
 namespace RC::Unreal {
 	class UDataTable;
@@ -20,7 +28,7 @@ namespace Palworld {
 		~PalItemModLoader();
     protected:
         virtual void OnLoad(const std::filesystem::path& loaderPath, const RC::StringType& modName, const EEngineLifecyclePhase& engineLifecyclePhase) override final;
-        virtual void OnAutoReload(const RC::StringType& modName, const std::filesystem::path& modFilePath) override final;
+        virtual void OnAutoReload(const std::filesystem::path::string_type& modName, const std::filesystem::path& modFilePath) override final;
 
         virtual bool CanInitialize(const EEngineLifecyclePhase& engineLifecyclePhase) override final;
         virtual bool OnInitialize() override final;

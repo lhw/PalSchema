@@ -230,7 +230,7 @@ namespace Palworld {
             PS::JsonHelpers::ParseString(value, "SpawnerName", spawnerName);
 
             auto spawnerNameWide = RC::to_generic_string(spawnerName);
-            spawnerNameWide = std::format(TEXT("{}_{}"), spawnerInfo.ModName, spawnerNameWide);
+            spawnerNameWide = fmt::format(TEXT("{}_{}"), spawnerInfo.ModName, spawnerNameWide);
 
             spawnerInfo.SpawnerName = FName(spawnerNameWide, FNAME_Add);
         }

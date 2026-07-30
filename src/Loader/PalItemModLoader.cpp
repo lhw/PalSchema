@@ -41,7 +41,7 @@ namespace Palworld {
         });
 	}
 
-    void PalItemModLoader::OnAutoReload(const RC::StringType& modName, const std::filesystem::path& modFilePath)
+    void PalItemModLoader::OnAutoReload(const std::filesystem::path::string_type& modName, const std::filesystem::path& modFilePath)
     {
         PS::JsonHelpers::ParseJsonFileInPath(modFilePath, [&](const nlohmann::json& data) {
             LoadItems(data);
@@ -316,7 +316,7 @@ namespace Palworld {
 	{
 		if (data.contains("Name"))
 		{
-			auto rowId = std::format(TEXT("ITEM_NAME_{}"), itemId.ToString());
+			auto rowId = fmt::format(TEXT("ITEM_NAME_{}"), itemId.ToString());
 			auto rowStruct = m_nameTranslationTable->GetRowStruct().Get();
 			auto textDataProperty = rowStruct->GetPropertyByName(TEXT("TextData"));
             if (textDataProperty)
@@ -340,7 +340,7 @@ namespace Palworld {
 
 		if (data.contains("Description"))
 		{
-			auto rowId = std::format(TEXT("ITEM_DESC_{}"), itemId.ToString());
+			auto rowId = fmt::format(TEXT("ITEM_DESC_{}"), itemId.ToString());
             auto rowStruct = m_descriptionTranslationTable->GetRowStruct().Get();
             auto textDataProperty = rowStruct->GetPropertyByName(TEXT("TextData"));
             if (textDataProperty)
@@ -367,7 +367,7 @@ namespace Palworld {
 	{
 		if (data.contains("Name"))
 		{
-			auto rowId = std::format(TEXT("ITEM_NAME_{}"), itemId.ToString());
+			auto rowId = fmt::format(TEXT("ITEM_NAME_{}"), itemId.ToString());
 			auto rowStruct = m_nameTranslationTable->GetRowStruct().Get();
 			auto textDataProperty = rowStruct->GetPropertyByName(TEXT("TextData"));
 			if (textDataProperty)
@@ -382,7 +382,7 @@ namespace Palworld {
 
 		if (data.contains("Description"))
 		{
-			auto rowId = std::format(TEXT("ITEM_DESC_{}"), itemId.ToString());
+			auto rowId = fmt::format(TEXT("ITEM_DESC_{}"), itemId.ToString());
 			auto rowStruct = m_nameTranslationTable->GetRowStruct().Get();
 			auto textDataProperty = rowStruct->GetPropertyByName(TEXT("TextData"));
 			if (textDataProperty)

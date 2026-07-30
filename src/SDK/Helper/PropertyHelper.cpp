@@ -342,7 +342,7 @@ namespace Palworld {
             PackagePath = PackagePath.erase(0, resourcePrefix.length());
 
             // "/Engine/Transient.PalSchema/Resources/modname/resourcename"
-            PackagePath = std::format(TEXT("/Engine/Transient.PalSchema/Resources/{}"), PackagePath);
+            PackagePath = fmt::format(TEXT("/Engine/Transient.PalSchema/Resources/{}"), PackagePath);
         }
 
         auto SoftObjectPtr = UECustom::TSoftObjectPtr<UObject>(UECustom::FSoftObjectPath(PackagePath));

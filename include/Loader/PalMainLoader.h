@@ -4,7 +4,15 @@
 #include <functional>
 #include "Loader/PalResourceLoader.h"
 #include "SDK/Classes/Custom/UDataTableStore.h"
+#ifdef _WIN32
 #include "safetyhook.hpp"
+#else
+struct SafetyHookInline {
+    template<typename... Args>
+    void call(Args&&...) {}
+    void disable() {}
+};
+#endif
 
 namespace RC::Unreal {
     class AGameModeBase;

@@ -72,7 +72,7 @@ namespace Palworld {
     {
         // We have to rename here, because CollectGarbage happens at the end of a frame and from testing, it happens after we add a new resource -
         // which isn't quick enough. You're not allowed to rename an asset to something that already exists, otherwise UE will crash.
-        auto tempName = std::format(TEXT("{}-Temp"), resource->GetFullName());
+        auto tempName = fmt::format(TEXT("{}-Temp"), resource->GetFullName());
         resource->Rename(tempName.c_str());
         resource->ClearRootSet();
     }
@@ -177,7 +177,7 @@ namespace Palworld {
         auto newTexture = UECustom::UKismetRenderingLibrary::ImportFileAsTexture2D(nullptr, FString(imagePath.c_str()));
         newTexture->SetRootSet();
 
-        auto packagePath = std::format(TEXT("PalSchema/Resources/{}/{}"), modName, imageName);
+        auto packagePath = fmt::format(TEXT("PalSchema/Resources/{}/{}"), modName, imageName);
         newTexture->Rename(packagePath.c_str()); // becomes "/Engine/Transient.PalSchema/Resources/modname/resourcename"
 
         RegisterResourceAsset(modName, newTexture);

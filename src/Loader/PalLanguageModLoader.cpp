@@ -46,7 +46,7 @@ namespace Palworld {
         }
     }
 
-    void PalLanguageModLoader::OnAutoReload(const RC::StringType& modName, const std::filesystem::path& modFilePath)
+    void PalLanguageModLoader::OnAutoReload(const std::filesystem::path::string_type& modName, const std::filesystem::path& modFilePath)
     {
         PS::JsonHelpers::ParseJsonFileInPath(modFilePath, [&](nlohmann::json data) {
             LoadTranslations(data);

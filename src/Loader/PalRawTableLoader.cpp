@@ -111,7 +111,7 @@ namespace Palworld {
         });
     }
 
-    void PalRawTableLoader::OnAutoReload(const RC::StringType& modName, const std::filesystem::path& modFilePath)
+    void PalRawTableLoader::OnAutoReload(const std::filesystem::path::string_type& modName, const std::filesystem::path& modFilePath)
     {
         PS::JsonHelpers::ParseJsonFileInPath(modFilePath, [&](const nlohmann::json& data) {
             for (auto& [key, value] : data.items())

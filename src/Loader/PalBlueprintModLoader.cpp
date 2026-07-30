@@ -274,7 +274,7 @@ namespace Palworld {
             return;
         }
 
-        auto componentFullName = std::format(TEXT("{}_GEN_VARIABLE"), componentName);
+        auto componentFullName = fmt::format(TEXT("{}_GEN_VARIABLE"), componentName);
         UObject* inheritableComponent = nullptr;
 
         auto inheritableComponentHandler = bpClass->GetInheritableComponentHandler();
