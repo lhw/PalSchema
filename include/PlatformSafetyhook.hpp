@@ -115,3 +115,7 @@ inline InlineHook create_inline(void* target, void* hook) {
 }
 
 } // namespace safetyhook
+
+// Bring SafetyHookInline into global scope (matches Windows safetyhook behavior)
+using safetyhook::SafetyHookInline;
+using safetyhook::InlineHook;

@@ -4,7 +4,7 @@
 #include "SDK/Structs/FSoftObjectPtr.h"
 
 namespace UECustom {
-    using UE::Core::Private::BoolIdentityConcept;
+    using namespace RC::Unreal;
     template<typename UEType>
     class TSoftObjectPtr
     {
