@@ -169,11 +169,10 @@ namespace Palworld {
 
         // Read addresses from [Signatures] section
         // Format: FunctionName=0xADDRESS
-        auto entries = parser.get_section(STR("Signatures"));
-        for (auto& [key, value] : entries)
-        {
-            std::string func_name = RC::to_utf8(key);
-            std::string addr_str = RC::to_utf8(value);
+        auto entries = parser.get_list(STR("Signatures"));
+        entries.for_each([&](const auto& key, auto& value) {
+            std::string func_name = RC::to_utf8_string(key);
+            std::string addr_str = RC::to_utf8_string(value.get_string_value());
 
             // Parse hex address (0x prefix)
             void* addr = nullptr;
@@ -191,6 +190,6 @@ namespace Palworld {
                 SignatureMap[func_name] = addr;
                 PS::Log<LogLevel::Normal>(STR("Loaded {} = {} from INI\n"), RC::to_generic_string(func_name), addr);
             }
-        }
+        });
     }
 }
