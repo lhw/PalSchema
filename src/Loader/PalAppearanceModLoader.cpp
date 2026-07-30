@@ -38,7 +38,7 @@ namespace Palworld {
         });
     }
 
-    void PalAppearanceModLoader::OnAutoReload(const std::filesystem::path::string_type& modName, const std::filesystem::path& modFilePath)
+    void PalAppearanceModLoader::OnAutoReload(const RC::StringType& modName, const std::filesystem::path& modFilePath)
     {
         PS::JsonHelpers::ParseJsonFilesInPath(modFilePath, [&](const nlohmann::json& data) {
             LoadAppearances(data);

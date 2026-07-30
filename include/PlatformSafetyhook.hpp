@@ -64,7 +64,7 @@ public:
 
     void* original() const { return m_original; }
 
-    template<typename Ret, typename... Args>
+    template<typename Ret = void, typename... Args>
     Ret call(Args... args) {
         using FuncPtr = Ret(*)(std::remove_reference_t<Args>...);
         auto func = reinterpret_cast<FuncPtr>(m_original);
@@ -112,16 +112,17 @@ inline InlineHook create_inline(void* target, void* hook, void** original) {
     return ih;
 }
 
-inline InlineHook create_inline(void* target, void* hook) {
+template<typename T1, typename T2>
+inline InlineHook create_inline(T1 target, T2 hook) {
     InlineHook ih;
-    ih.m_target = target;
-    ih.m_hook = hook;
+    ih.m_target = reinterpret_cast<void*>(target);
+    ih.m_hook = reinterpret_cast<void*>(hook);
 
     ih.m_funchook = funchook_create();
     if (!ih.m_funchook) return ih;
 
-    void* target_copy = target;
-    funchook_prepare(ih.m_funchook, &target_copy, hook);
+    void* target_copy = ih.m_target;
+    funchook_prepare(ih.m_funchook, &target_copy, ih.m_hook);
 
     ih.m_original_ptr = target_copy;
     ih.m_original = &ih.m_original_ptr;

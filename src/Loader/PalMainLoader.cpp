@@ -80,7 +80,7 @@ namespace Palworld {
 
         // Skip PalSchema and mods folder
         std::advance(it, 2);
-        auto modName = it->native();
+        RC::StringType modName = RC::to_generic_string(it->native());
 
         // Move to folder type, e.g. buildings
         std::advance(it, 1);
@@ -121,7 +121,7 @@ namespace Palworld {
                 if (entry.is_directory())
                 {
                     auto& path = entry.path();
-                    auto folderName = path.stem().native();
+                    RC::StringType folderName = RC::to_generic_string(path.stem().native());
                     callback(entry.path(), folderName);
                 }
             }
@@ -293,7 +293,7 @@ namespace Palworld {
 
     void PalMainLoader::LoadMods(EEngineLifecyclePhase engineLifecyclePhase)
     {
-        IterateModsFolder([&](const fs::path& modPath, const fs::path::string_type& modName)
+        IterateModsFolder([&](const fs::path& modPath, const RC::StringType& modName)
         {
             try
             {

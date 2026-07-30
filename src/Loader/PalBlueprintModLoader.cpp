@@ -49,7 +49,7 @@ namespace Palworld {
         }
     }
 
-    void PalBlueprintModLoader::OnAutoReload(const std::filesystem::path::string_type& modName, const std::filesystem::path& modFilePath)
+    void PalBlueprintModLoader::OnAutoReload(const RC::StringType& modName, const std::filesystem::path& modFilePath)
     {
         PS::JsonHelpers::ParseJsonFileInPath(modFilePath, [&](const nlohmann::json& data) {
             LoadUnsafe(data);
@@ -163,8 +163,14 @@ namespace Palworld {
             auto assetNameWide = RC::to_generic_string(assetName);
             if (assetNameWide.starts_with(TEXT("/Game/")))
             {
-                static const std::wregex Pattern(LR"(^(.*/)([^/.]+)$)");
-                assetNameWide = std::regex_replace(assetNameWide, Pattern, TEXT("$1$2.$2_C"));
+                // Append _C suffix to the asset name (e.g., /Game/Foo/Bar -> /Game/Foo/Bar.Bar_C)
+                auto lastSlash = assetNameWide.rfind(TEXT('/'));
+                if (lastSlash != RC::StringType::npos)
+                {
+                    auto pathPart = assetNameWide.substr(0, lastSlash + 1);
+                    auto namePart = assetNameWide.substr(lastSlash + 1);
+                    assetNameWide = pathPart + namePart + TEXT(".") + namePart + TEXT("_C");
+                }
 
                 auto softObjectPtr = UECustom::TSoftObjectPtr<UObject>(UECustom::FSoftObjectPath(assetNameWide));
                 auto asset = UECustom::UKismetSystemLibrary::LoadAsset_Blocking(softObjectPtr);

@@ -30,7 +30,7 @@ namespace Palworld {
 
         ~PalSpawnLoader();
 
-        void Reload(const std::filesystem::path::string_type& modName, const nlohmann::json& data);
+        void Reload(const RC::StringType& modName, const nlohmann::json& data);
 
         // This is called whenever a world partition is loaded within the main world.
         void OnCellLoaded(UECustom::UWorldPartitionRuntimeLevelStreamingCell* cell);
@@ -39,7 +39,7 @@ namespace Palworld {
         void OnCellUnloaded(UECustom::UWorldPartitionRuntimeLevelStreamingCell* cell);
     protected:
         virtual void OnLoad(const std::filesystem::path& loaderPath, const RC::StringType& modName, const EEngineLifecyclePhase& engineLifecyclePhase) override final;
-        virtual void OnAutoReload(const std::filesystem::path::string_type& modName, const std::filesystem::path& modFilePath) override final;
+        virtual void OnAutoReload(const RC::StringType& modName, const std::filesystem::path& modFilePath) override final;
 
         virtual bool CanInitialize(const EEngineLifecyclePhase& engineLifecyclePhase) override final;
         virtual bool OnInitialize() override final;
@@ -54,9 +54,9 @@ namespace Palworld {
 
         void LoadSpawns(const RC::StringType& modName, const nlohmann::json& data);
 
-        void RegisterSpawn(const std::filesystem::path::string_type& modName, const nlohmann::json& value);
-        void RegisterSheet(const std::filesystem::path::string_type& modName, PS::SpawnerInfo& spawnerInfo, const nlohmann::json& value);
-        void RegisterMonoNPC(const std::filesystem::path::string_type& modName, PS::SpawnerInfo& spawnerInfo, const nlohmann::json& value);
+        void RegisterSpawn(const RC::StringType& modName, const nlohmann::json& value);
+        void RegisterSheet(const RC::StringType& modName, PS::SpawnerInfo& spawnerInfo, const nlohmann::json& value);
+        void RegisterMonoNPC(const RC::StringType& modName, PS::SpawnerInfo& spawnerInfo, const nlohmann::json& value);
 
         void ProcessCellSpawners(UECustom::UWorldPartitionRuntimeLevelStreamingCell* cell);
         void CreateSpawner(UECustom::UWorldPartitionRuntimeLevelStreamingCell* cell, PS::SpawnerInfo& spawnerInfo);
@@ -68,7 +68,7 @@ namespace Palworld {
 
         void DestroySpawnersInCell(UECustom::UWorldPartitionRuntimeLevelStreamingCell* cell);
         
-        void UnloadMod(const std::filesystem::path::string_type& modName);
+        void UnloadMod(const RC::StringType& modName);
 
         void CleanupSpawns();
     private:

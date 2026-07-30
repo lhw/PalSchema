@@ -37,7 +37,7 @@ namespace Palworld {
         });
 	}
 
-    void PalMonsterModLoader::OnAutoReload(const std::filesystem::path::string_type& modName, const std::filesystem::path& modFilePath)
+    void PalMonsterModLoader::OnAutoReload(const RC::StringType& modName, const std::filesystem::path& modFilePath)
     {
         PS::JsonHelpers::ParseJsonFileInPath(modFilePath, [&](const nlohmann::json& data) {
             LoadPals(data);
@@ -389,7 +389,7 @@ namespace Palworld {
 		auto loot_array = properties.get<std::vector<nlohmann::json>>();
 		for (auto& loot : loot_array)
 		{
-			auto IndexString = std::to_wstring(Index);
+			auto IndexString = fmt::format(STR("{}"), Index);
 
 			if (!loot.contains("ItemId"))
 			{
