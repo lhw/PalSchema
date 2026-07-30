@@ -28,9 +28,24 @@ public:
     InlineHook& operator=(const InlineHook&) = delete;
     InlineHook(InlineHook&& other) noexcept
         : m_funchook(other.m_funchook), m_target(other.m_target),
-          m_hook(other.m_hook), m_original(other.m_original), m_enabled(other.m_enabled) {
+          m_hook(other.m_hook), m_original(other.m_original),
+          m_original_ptr(other.m_original_ptr), m_enabled(other.m_enabled) {
         other.m_funchook = nullptr;
         other.m_enabled = false;
+    }
+    InlineHook& operator=(InlineHook&& other) noexcept {
+        if (this != &other) {
+            disable();
+            m_funchook = other.m_funchook;
+            m_target = other.m_target;
+            m_hook = other.m_hook;
+            m_original = other.m_original;
+            m_original_ptr = other.m_original_ptr;
+            m_enabled = other.m_enabled;
+            other.m_funchook = nullptr;
+            other.m_enabled = false;
+        }
+        return *this;
     }
 
     bool enable() {
@@ -51,7 +66,7 @@ public:
 
     template<typename Ret, typename... Args>
     Ret call(Args... args) {
-        using FuncPtr = Ret(*)(Args...);
+        using FuncPtr = Ret(*)(std::remove_reference_t<Args>...);
         auto func = reinterpret_cast<FuncPtr>(m_original);
         return func(args...);
     }
