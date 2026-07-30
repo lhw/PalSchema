@@ -41,7 +41,7 @@ public:
         // Linux: load manual address overrides from PalSchema_Addresses.ini
         PS::Log<LogLevel::Verbose>(STR("Loading manual addresses for Linux...\n"));
         Palworld::SignatureManager::LoadManualAddresses(
-            UE4SSProgram::get_program().get_working_directory());
+            RC::to_utf8_string(RC::UE4SSProgram::get_program().get_working_directory()));
 #endif
 
         PS::Log<LogLevel::Verbose>(STR("Initializing UnrealOffsets...\n"));

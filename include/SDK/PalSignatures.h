@@ -65,6 +65,6 @@ namespace Palworld {
 #endif
 
         // Load manual address overrides from PalSchema_Addresses.ini (Linux fallback)
-        static void LoadManualAddresses(const std::filesystem::path& working_directory);
+        static void LoadManualAddresses(const std::string& working_directory);
     };
 }

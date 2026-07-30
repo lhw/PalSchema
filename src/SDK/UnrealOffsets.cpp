@@ -65,7 +65,7 @@ void Palworld::UnrealOffsets::ResolveFromUE4SS()
 
     // UE4SS resolves FName::Constructor and FName::ToString via dlsym on Linux.
     // If they weren't assigned from AOB/INI, try to get them from UE4SS's resolved state.
-    if (!FName::ConstructorInternal.get_address())
+    if (!FName::ConstructorInternal.get_function_address())
     {
         auto addr = UnrealInitializer::LoadExport("FNameCreateConstructor");
         if (addr)
@@ -75,7 +75,7 @@ void Palworld::UnrealOffsets::ResolveFromUE4SS()
         }
     }
 
-    if (!FName::ToStringInternal.get_address())
+    if (!FName::ToStringInternal.get_function_address())
     {
         auto addr = UnrealInitializer::LoadExport("FNameToStringInternal");
         if (addr)

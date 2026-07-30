@@ -143,9 +143,9 @@ namespace Palworld {
         return nullptr;
     }
 
-    void SignatureManager::LoadManualAddresses(const std::filesystem::path& working_directory)
+    void SignatureManager::LoadManualAddresses(const std::string& working_directory)
     {
-        auto addresses_file = working_directory / "PalSchema_Addresses.ini";
+        auto addresses_file = std::filesystem::path(working_directory) / "PalSchema_Addresses.ini";
         if (!std::filesystem::exists(addresses_file))
         {
             PS::Log<LogLevel::Verbose>(STR("No PalSchema_Addresses.ini found, skipping manual address loading.\n"));
