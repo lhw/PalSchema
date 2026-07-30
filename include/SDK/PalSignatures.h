@@ -12,6 +12,9 @@ namespace Palworld {
         
         // Expected parameter format: [CLASS]::[FUNCTION] or [FUNCTION], for example AGameModeBase::InitGameState or AsyncTask
         static void* GetSignature(const std::string& ClassAndFunction);
+
+        // Load manual address overrides from PalSchema_Addresses.ini (Linux fallback)
+        static void LoadManualAddresses(const std::string& working_directory);
     private:
         static inline std::unordered_map<std::string, void*> SignatureMap;
 
@@ -63,8 +66,5 @@ namespace Palworld {
         static inline std::unordered_map<std::string, std::string> Signatures {};
         static inline std::unordered_map<std::string, std::string> SignaturesCallResolve {};
 #endif
-
-        // Load manual address overrides from PalSchema_Addresses.ini (Linux fallback)
-        static void LoadManualAddresses(const std::string& working_directory);
     };
 }
