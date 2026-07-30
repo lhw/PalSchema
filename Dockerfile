@@ -26,7 +26,8 @@ RUN export PATH="/root/.cargo/bin:${PATH}" && \
     cmake -B build_palschema \
       -G Ninja \
       -DCMAKE_BUILD_TYPE=Game__Shipping__Linux64 && \
-    cmake --build build_palschema
+    cmake --build build_palschema 2>&1 | tee /src/build_full.log; \
+    echo "EXIT_CODE=$?" >> /src/build_full.log
 
 # Runtime stage - minimal image with just the built .so
 FROM --platform=linux/amd64 ubuntu:24.04 AS runtime
@@ -35,8 +36,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libstdc++6 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy the built shared library (output dir follows UE4SS convention: $<CONFIG>/lib/)
-COPY --from=builder /src/build_palschema/Game__Shipping__Linux64/lib/libPalSchema.so /output/libPalSchema.so
+# Copy the built shared library (libPalSchema.so is at build root, libUE4SS.so is in config dir)
+COPY --from=builder /src/build_palschema/libPalSchema.so /output/libPalSchema.so
+
+# Copy build log for debugging
+COPY --from=builder /src/build_full.log /output/build_full.log
 
 # Copy UE4SS Linux build for reference
 COPY --from=builder /src/build_palschema/Game__Shipping__Linux64/lib/libUE4SS.so /output/libUE4SS.so
