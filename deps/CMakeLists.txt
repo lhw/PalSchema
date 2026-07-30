@@ -10,7 +10,12 @@ endif()
 
 add_subdirectory("json")
 add_subdirectory("glaze")
+
+# Build efsw as static library to avoid runtime libefsw.so dependency
+set(BUILD_SHARED_LIBS_SAVED ${BUILD_SHARED_LIBS})
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 add_subdirectory("efsw")
+set(BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS_SAVED} CACHE BOOL "" FORCE)
 
 if(WIN32)
     add_subdirectory("safetyhook")
