@@ -9,11 +9,7 @@
 #ifdef _WIN32
 #include "safetyhook.hpp"
 #else
-struct SafetyHookInline {
-    template<typename... Args>
-    void call(Args&&...) {}
-    void disable() {}
-};
+#include "PlatformSafetyhook.hpp"
 #endif
 
 namespace RC::Unreal {
