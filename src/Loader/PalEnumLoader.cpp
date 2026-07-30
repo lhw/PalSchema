@@ -92,7 +92,7 @@ namespace Palworld {
                             enumValueString, enumNamespace));
                 }
 
-                auto enumValueStringWide = std::format(STR("{}::{}"), enumNamespaceWide, RC::to_generic_string(enumValueString));
+                auto enumValueStringWide = PS::Format(STR("{}::{}"), enumNamespaceWide, RC::to_generic_string(enumValueString));
 
                 auto enumName = FName(enumValueStringWide, FNAME_Add);
                 int32 indexToInsertAt = enumObject->NumEnums() - 1;

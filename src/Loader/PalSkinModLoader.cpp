@@ -244,7 +244,7 @@ namespace Palworld {
 
 	void PalSkinModLoader::AddTranslation(const RC::Unreal::FName& SkinId, const nlohmann::json& Data)
 	{
-		auto FixedSkinId = std::format(STR("SKIN_NAME_{}"), SkinId.ToString());
+		auto FixedSkinId = PS::Format(STR("SKIN_NAME_{}"), SkinId.ToString());
 		auto TranslationRowStruct = m_skinTranslationTable->GetRowStruct().Get();
 
         auto TextProperty = PropertyHelper::GetPropertyByName(TranslationRowStruct, STR("TextData"));
@@ -266,7 +266,7 @@ namespace Palworld {
 
 	void PalSkinModLoader::EditTranslation(const RC::Unreal::FName& SkinId, const nlohmann::json& Data)
 	{
-		auto FixedSkinId = std::format(STR("SKIN_NAME_{}"), SkinId.ToString());
+		auto FixedSkinId = PS::Format(STR("SKIN_NAME_{}"), SkinId.ToString());
 		auto TranslationRowStruct = m_skinTranslationTable->GetRowStruct().Get();
 
         auto TextProperty = PropertyHelper::GetPropertyByName(TranslationRowStruct, STR("TextData"));
