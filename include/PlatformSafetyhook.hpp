@@ -71,10 +71,25 @@ public:
         return func(args...);
     }
 
-private:
-    friend InlineHook create_inline(void* target, void* hook, void** original);
-    friend InlineHook create_inline(void* target, void* hook);
+    template<typename T1, typename T2>
+    static InlineHook create_from(T1 target, T2 hook) {
+        InlineHook ih;
+        ih.m_target = reinterpret_cast<void*>(target);
+        ih.m_hook = reinterpret_cast<void*>(hook);
 
+        ih.m_funchook = funchook_create();
+        if (!ih.m_funchook) return ih;
+
+        void* target_copy = ih.m_target;
+        funchook_prepare(ih.m_funchook, &target_copy, ih.m_hook);
+
+        ih.m_original_ptr = target_copy;
+        ih.m_original = &ih.m_original_ptr;
+
+        return ih;
+    }
+
+private:
     funchook_t* m_funchook = nullptr;
     void* m_target = nullptr;
     void* m_hook = nullptr;
@@ -88,46 +103,12 @@ using SafetyHookInline = InlineHook;
 // funchook_prepare: funchook_prepare(funchook, &target_func, hook_func)
 // It modifies target_func to point to the trampoline (original function).
 inline InlineHook create_inline(void* target, void* hook, void** original) {
-    InlineHook ih;
-    ih.m_target = target;
-    ih.m_hook = hook;
-    ih.m_original = original;
-
-    ih.m_funchook = funchook_create();
-    if (!ih.m_funchook) return ih;
-
-    // funchook_prepare modifies the target pointer to point to the trampoline
-    void* target_copy = target;
-    funchook_prepare(ih.m_funchook, &target_copy, hook);
-
-    // The trampoline (original function) is now in target_copy
-    if (original) {
-        *original = target_copy;
-        ih.m_original = original;
-    } else {
-        ih.m_original_ptr = target_copy;
-        ih.m_original = &ih.m_original_ptr;
-    }
-
-    return ih;
+    return InlineHook::create_from(target, hook);
 }
 
 template<typename T1, typename T2>
 inline InlineHook create_inline(T1 target, T2 hook) {
-    InlineHook ih;
-    ih.m_target = reinterpret_cast<void*>(target);
-    ih.m_hook = reinterpret_cast<void*>(hook);
-
-    ih.m_funchook = funchook_create();
-    if (!ih.m_funchook) return ih;
-
-    void* target_copy = ih.m_target;
-    funchook_prepare(ih.m_funchook, &target_copy, ih.m_hook);
-
-    ih.m_original_ptr = target_copy;
-    ih.m_original = &ih.m_original_ptr;
-
-    return ih;
+    return InlineHook::create_from(target, hook);
 }
 
 } // namespace safetyhook

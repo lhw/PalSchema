@@ -85,7 +85,7 @@ namespace Palworld {
             return;
         }
 
-        auto fileName = modFilePath.stem().native();
+        auto fileName = RC::to_generic_string(modFilePath.stem().native());
 
         auto& loadedResources = loadedResourcesIt->second;
         std::erase_if(loadedResources, [&](RC::Unreal::UObject* loadedResource) {
