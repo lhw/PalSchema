@@ -69,30 +69,7 @@ namespace Palworld::PropertyHelper {
 
     RC::Unreal::FProperty* GetPropertyByName(RC::Unreal::UClass* Class, const RC::StringType& PropertyName);
 
-    template <RC::Unreal::FFieldDerivative FFieldDerivedType>
-    FFieldDerivedType* GetPropertyByName(RC::Unreal::UClass* Class, const RC::StringType& PropertyName)
-    {
-        auto Property = GetPropertyByName(Class, PropertyName);
-        return CastProperty<FFieldDerivedType>(Property);
-    }
-
     RC::Unreal::FProperty* GetPropertyByName(RC::Unreal::UScriptStruct* Struct, const RC::StringType& PropertyName);
-
-    template <RC::Unreal::FFieldDerivative FFieldDerivedType>
-    FFieldDerivedType* GetPropertyByName(RC::Unreal::UScriptStruct* Struct, const RC::StringType& PropertyName)
-    {
-        auto Property = GetPropertyByName(Struct, PropertyName);
-        return CastProperty<FFieldDerivedType>(Property);
-    }
-
-    void* GetValuePtrByPropertyNameInChain(RC::Unreal::UObject* Instance, const RC::StringType& PropertyName);
-
-    template<typename ReturnType>
-    ReturnType* GetValuePtrByPropertyNameInChain(RC::Unreal::UObject* Instance, const RC::StringType& PropertyName)
-    {
-        auto ValuePtr = PropertyHelper::GetValuePtrByPropertyNameInChain(Instance, PropertyName);
-        return static_cast<ReturnType*>(ValuePtr);
-    }
 
     RC::Unreal::FFieldClass* FindFieldClassByName(const RC::Unreal::FName& Name);
 
@@ -171,5 +148,28 @@ namespace Palworld::PropertyHelper {
     FFieldDerivedType* CastProperty(RC::Unreal::FField* Field)
     {
         return Field != nullptr && IsPropertyA<FFieldDerivedType>(Field) ? static_cast<FFieldDerivedType*>(Field) : nullptr;
+    }
+
+    template <RC::Unreal::FFieldDerivative FFieldDerivedType>
+    FFieldDerivedType* GetPropertyByName(RC::Unreal::UClass* Class, const RC::StringType& PropertyName)
+    {
+        auto Property = GetPropertyByName(Class, PropertyName);
+        return CastProperty<FFieldDerivedType>(Property);
+    }
+
+    template <RC::Unreal::FFieldDerivative FFieldDerivedType>
+    FFieldDerivedType* GetPropertyByName(RC::Unreal::UScriptStruct* Struct, const RC::StringType& PropertyName)
+    {
+        auto Property = GetPropertyByName(Struct, PropertyName);
+        return CastProperty<FFieldDerivedType>(Property);
+    }
+
+    void* GetValuePtrByPropertyNameInChain(RC::Unreal::UObject* Instance, const RC::StringType& PropertyName);
+
+    template<typename ReturnType>
+    ReturnType* GetValuePtrByPropertyNameInChain(RC::Unreal::UObject* Instance, const RC::StringType& PropertyName)
+    {
+        auto ValuePtr = PropertyHelper::GetValuePtrByPropertyNameInChain(Instance, PropertyName);
+        return static_cast<ReturnType*>(ValuePtr);
     }
 }

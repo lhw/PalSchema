@@ -8,6 +8,7 @@
 #include "nlohmann/json_fwd.hpp"
 
 namespace RC::Unreal {
+    class AActor;
     class UWorld;
 }
 
