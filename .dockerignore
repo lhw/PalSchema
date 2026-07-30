@@ -1,0 +1,10 @@
+.git
+**/.git
+build_linux/
+**/build_linux/
+**/build/
+**/cmake-build-*/
+**/.vscode/
+**/.idea/
+*.md
+!deps/ue4ss-linux/README.md

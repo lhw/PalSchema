@@ -55,11 +55,66 @@ void Palworld::UnrealOffsets::Initialize()
     PS::Log<LogLevel::Verbose>(STR("Versioned Container initialized.\n"));
 }
 
+void Palworld::UnrealOffsets::ResolveFromUE4SS()
+{
+    // On Linux, many functions are already resolved by UE4SS via dlsym + heuristic scan.
+    // Use UE4SS's API to obtain them if they weren't found via AOB/INI.
+
+#ifndef _WIN32
+    PS::Log<LogLevel::Verbose>(STR("Attempting to resolve functions from UE4SS...\n"));
+
+    // UE4SS resolves FName::Constructor and FName::ToString via dlsym on Linux.
+    // If they weren't assigned from AOB/INI, try to get them from UE4SS's resolved state.
+    if (!FName::ConstructorInternal.get_address())
+    {
+        auto addr = UnrealInitializer::LoadExport("FNameCreateConstructor");
+        if (addr)
+        {
+            FName::ConstructorInternal.assign_address(addr);
+            PS::Log<LogLevel::Verbose>(STR("Resolved FName::Constructor from UE4SS export: {}\n"), addr);
+        }
+    }
+
+    if (!FName::ToStringInternal.get_address())
+    {
+        auto addr = UnrealInitializer::LoadExport("FNameToStringInternal");
+        if (addr)
+        {
+            FName::ToStringInternal.assign_address(addr);
+            PS::Log<LogLevel::Verbose>(STR("Resolved FName::ToString from UE4SS export: {}\n"), addr);
+        }
+    }
+
+    // For GMalloc, UE4SS already resolves it via dlsym on Linux.
+    if (!RC::Unreal::GMalloc)
+    {
+        auto addr = UnrealInitializer::LoadExport("GMalloc");
+        if (addr)
+        {
+            RC::Unreal::GMalloc = static_cast<RC::Unreal::FMalloc**>(addr);
+            PS::Log<LogLevel::Verbose>(STR("Resolved GMalloc from UE4SS export: {}\n"), addr);
+        }
+    }
+#endif
+}
+
 void Palworld::UnrealOffsets::InitializeGMalloc()
 {
     if (RC::Unreal::GMalloc) return;
 
     PS::Log<LogLevel::Verbose>(STR("Initializing GMalloc...\n"));
+
+#ifndef _WIN32
+    // On Linux, UE4SS resolves GMalloc via dlsym. Try that first.
+    auto addr = UnrealInitializer::LoadExport("GMalloc");
+    if (addr)
+    {
+        RC::Unreal::GMalloc = static_cast<RC::Unreal::FMalloc**>(addr);
+        PS::Log<LogLevel::Verbose>(STR("Resolved GMalloc from UE4SS export: {}\n"), addr);
+        return;
+    }
+    PS::Log<LogLevel::Verbose>(STR("GMalloc not found via export, trying AOB scan...\n"));
+#endif
 
     auto StartAddr = static_cast<uint8_t*>(Palworld::SignatureManager::GetSignature("FMemory::Free"));
     if (!StartAddr)

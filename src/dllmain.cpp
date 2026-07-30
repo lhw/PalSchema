@@ -115,6 +115,13 @@ public:
 
     auto on_unreal_init() -> void override
     {
+#ifndef _WIN32
+        // On Linux, resolve functions from UE4SS's dlsym-based resolution
+        // before initializing the main loader.
+        PS::Log<LogLevel::Verbose>(STR("Resolving functions from UE4SS on Linux...\n"));
+        Palworld::UnrealOffsets::ResolveFromUE4SS();
+#endif
+
         MainLoader.Initialize();
     }
 private:
