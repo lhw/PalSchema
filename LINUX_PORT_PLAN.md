@@ -1,6 +1,6 @@
 # PalSchema Linux Port Plan
 
-## Status: In Progress (branch: `linux-port`)
+## Status: Compiling ✅ (branch: `linux-port`)
 
 ---
 
@@ -59,10 +59,13 @@ Pinned at: `e87756a8dcbd189b7728f6f0ebcb380915b5d4a1` (v3.0.26-linux-dev)
 | `deps/CMakeLists.txt` | Platform-conditional: `RE-UE4SS` (Windows) vs `ue4ss-linux` (Linux); `safetyhook` only on Windows |
 | `CMakeLists.txt` | Removed direct Zydis/Zycore/safetyhook link (via UE4SS transitively); added Linux link libs (`dl`, `pthread`); added `FORCE_U16`, `PLATFORM_LINUX` defines; set symbol visibility to hidden |
 | `include/Platform.h` | **NEW** — Cross-platform `PALSCHEMA_API` export macro |
-| `include/SDK/PalSignatures.h` | Wrapped Windows AOB patterns in `#ifdef _WIN32`; Linux has empty maps + `LoadManualAddresses()` declaration |
-| `src/SDK/PalSignatures.cpp` | Added Linux AOB scanning path (if patterns provided); added `LoadManualAddresses()` implementation using `PalSchema_Addresses.ini` |
-| `src/dllmain.cpp` | Uses `Platform.h`; calls `LoadManualAddresses()` on Linux; ImGui GUI guarded with `#ifdef HAS_GUI` |
-| `Dockerfile` | **NEW** — Multi-stage build: UE4SS Linux → PalSchema → runtime |
+| `include/PlatformSafetyhook.hpp` | **NEW** — funchook-based `InlineHook` wrapper matching safetyhook API |
+| `include/SDK/PalSignatures.h` | Wrapped Windows AOB patterns in `#ifdef _WIN32`; Linux has empty maps + `LoadManualAddresses()` |
+| `src/SDK/PalSignatures.cpp` | Added `LoadManualAddresses()` using INI parser; `get_list().for_each()` for section iteration |
+| `src/dllmain.cpp` | Uses `Platform.h`; calls `LoadManualAddresses()` on Linux; `RC::` qualified `UE4SSProgram` |
+| `src/Loader/*.cpp` | Standardized mod name types to `RC::StringType`; converted `path::native()` at filesystem boundaries |
+| `src/SDK/Helper/PropertyHelper.h` | Reordered templates: `IsPropertyA` + `CastProperty` before `GetPropertyByName` |
+| `Dockerfile` | **NEW** — Multi-stage build: ubuntu:24.04 builder → runtime with `libstdc++6` |
 | `build_scripts/build_linux.sh` | **NEW** — Local dev build script |
 | `PalSchema_Addresses.ini` | **NEW** — Template for Linux manual address overrides |
 
@@ -246,14 +249,14 @@ volumes:
 - [x] Export macros fixed
 - [x] Signature scanning made cross-platform
 - [x] Docker build environment created
-- [ ] **Test compilation** — Run `docker build` and verify `libPalSchema.so` is produced
+- [x] **Test compilation** — `docker build` produces `libPalSchema.so` (0 errors, 0 warnings from our code)
 
 ### Core Functionality (to get mod working)
 - [ ] **Procure PalServer Linux binary** — Extract from palworld-server-docker volume
 - [ ] **Derive Linux AOB patterns** — Scan the ELF binary for each of the 22 functions
 - [ ] **Populate PalSchema_Addresses.ini** — Fill in actual addresses
 - [ ] **Test GMalloc resolution** — Verify Zydis decoding works on Linux instruction patterns
-- [ ] **Test hook setup** — Verify safetyhook works with Linux function addresses
+- [ ] **Test hook setup** — Verify funchook works with Linux function addresses
 
 ### Polish
 - [ ] Guard remaining ImGui code (already done for dllmain.cpp, check other files)
@@ -266,35 +269,64 @@ volumes:
 ## 11. Key Technical Findings
 
 ### What Works Cross-Platform (No Changes Needed)
-- `std::filesystem` path handling
-- `safetyhook::create_inline` (works on Linux via funchook or safetyhook)
 - `efsw::FileWatcher` (uses inotify on Linux)
 - Zydis disassembler (x86-64 ISA is platform-independent)
 - VTable index-based virtual function calls (same C++ ABI for UE4 classes)
 - `Ini::Parser`, `nlohmann::json`, `glaze` — all cross-platform
-- `std::format`, `STR()` macro usage
-
-### What Requires Platform-Specific Code
-- Export macros (`__declspec` vs `visibility`)
-- AOB signature patterns (Windows vs Linux machine code)
-- GMalloc resolution (same Zydis approach, different instruction patterns)
-- ImGui GUI (guarded with `#ifdef HAS_GUI`, disabled for headless)
-- `version.rc` (Windows resource, not compiled on Linux)
-
-### UE4SS Linux API Compatibility
 - `CppUserModBase` interface is identical
 - `UE4SSProgram::get_program().get_working_directory()` works
-- `SinglePassScanner::start_scan()` with `ScanTarget::MainExe` works (populated via `dl_iterate_phdr`)
+- `SinglePassScanner::start_scan()` with `ScanTarget::MainExe` works
 - `ASMHelper::resolve_call()` works (Zydis-based, x86-64)
-- `Ini::Parser` available from UE4SS deps
-- `File::open()` available from UE4SS deps
-- `RC::to_utf8()` for string conversion available
+
+### What Requires Platform-Specific Code (and What We Fixed)
+- **Export macros** — `__declspec(dllexport)` → `__attribute__((visibility("default")))` via `PALSCHEMA_API`
+- **AOB signature patterns** — Windows x86-64 byte sequences won't match Linux ELF; need Linux patterns
+- **safetyhook → funchook** — Created `PlatformSafetyhook.hpp` wrapper with `InlineHook` class matching safetyhook's API (`create_inline`, `call<Ret>`, `enable/disable`). `funchook_prepare` + `funchook_install` for hooking.
+- **ImGui GUI** — Guarded with `#ifdef HAS_GUI`, disabled for headless (`UE4SS_GUI_ENABLED=OFF`)
+- **`_ReturnAddress`** — Mapped to `__builtin_return_address(0)`
+- **`static_cast<void*>` to function pointer** — Changed to `reinterpret_cast` (GCC disallows `static_cast` from `void*` to function pointer)
+- **`std::filesystem::path::string_type`** — On Linux this is `char`, not `wchar_t`. All mod name parameters standardized to `RC::StringType` (`char16_t`). Added `RC::to_generic_string(path::native())` conversions at filesystem boundaries.
+- **`fmt::format` / `PS::Log`** — `STR()` produces `char16_t` format strings; all arguments must be `char16_t`. Fixed `std::to_wstring` → `fmt::format(STR("{}"), val)` and wrapped `std::string` args with `RC::to_generic_string()`.
+- **`std::regex_replace` with char16_t** — Not supported by libstdc++. Replaced with manual string parsing.
+- **`FString` construction** — `FString(const char*)` doesn't exist on Linux; must pass `char16_t*`. Converted via `RC::to_generic_string(path.native())`.
+- **`Ini::Parser::get_section`** — Doesn't exist; use `get_list(section).for_each(callback)`.
+- **`RC::to_utf8`** — Doesn't exist; use `RC::to_utf8_string()` or `RC::to_string()`.
+- **`UE4SSProgram` namespace** — On Linux it's `RC::UE4SSProgram`, not bare `UE4SSProgram`.
+- **`RC::Function::get_address`** — Doesn't exist; use `get_function_address()`.
+- **Explicit qualification in `using namespace`** — Inside `namespace UECustom::BPGeneratedClassHelper`, functions can't have `UECustom::BPGeneratedClassHelper::` prefix.
+- **`std::format` with char16_t** — Not supported by GCC's libstdc++; use `fmt::format` instead.
+- **Forward declarations** — `AActor` needs explicit forward declaration in headers.
+
+### UE4SS Linux Build Quirks
+- Build type must be UE4-style: `Game__Shipping__Linux64` (parsed by `__` delimiter in `setup_build_configuration()`)
+- `UE4SS_GUI_ENABLED` must be `OFF` for headless servers (GLFW requires X11)
+- `UE4SS_INPUT_ENABLED` and `UE4SS_PROFILERS` should be `OFF`
+- Docker build log is truncated at 2MiB; build output goes to `build_palschema/libPalSchema.so` (not `Game__Shipping__Linux64/lib/`)
 
 ---
 
 ## 12. Git History
 
 ```
+* bfddfda build: fix Dockerfile COPY path for libPalSchema.so          (linux-port)
+* 98aa328 build: fix explicit qualification, Ini::Parser API, RC::to_utf8
+* 601360f build: fix get_function_address, UE4SSProgram namespace
+* e5cd3b1 build: move LoadManualAddresses to public
+* cb081fb build: fix static_cast to reinterpret_cast for function pointers
+* 3e90599 build: fix CastProperty forward decl, AActor forward decl
+* 493b0cb build: fix InlineHook private access, convert .native()
+* 588e9bb build: fix type mismatches - standardize RC::StringType
+* d0eb1c0 build: fix InlineHook move assignment, call<T> template
+* 5616f88 build: fix SafetyHookInline scope, TCHAR qualification
+* a047697 build: fix PlatformSafetyhook stub
+* b8cce77 build: fix Linux compilation - safetyhook guards, TEXT() format
+* e41dc06 build: add PSFormat.h, -Wno-changes-meaning
+* 713558f build: fix char16_t formatting
+* ed4ee64 build: exclude build_palschema from docker context
+* 605f401 build: fix CMAKE_BUILD_TYPE to UE4-style
+* 56146b3 build: simplify Dockerfile
+* 40ddfc2 deps: disable UE4SS GUI
+* 66b9f61 feat: Linux port improvements
+* 5577f87 docs: add comprehensive Linux port plan
 * 486d5bf feat: initial Linux port via ue4ss-linux submodule  (linux-port)
-* 9847387 Update copyright year in LICENSE file                (main)
 ```
