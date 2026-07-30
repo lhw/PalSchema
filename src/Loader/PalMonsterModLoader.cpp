@@ -363,7 +363,7 @@ namespace Palworld {
 			}
 
 			auto NewRow = reinterpret_cast<RC::Unreal::FTableRowBase*>(WazaMasterLevelData);
-			auto NewRowName = PS::Format(STR("{}{}"), CharacterId.ToString(), Level);
+			auto NewRowName = fmt::format(STR("{}{}"), CharacterId.ToString(), Level);
 
 			m_wazaMasterLevelTable->AddRow(FName(NewRowName, FNAME_Add), *NewRow);
 		}
@@ -439,28 +439,28 @@ namespace Palworld {
 				continue;
 			}
 
-			auto ItemIdWithSuffix = PS::Format(STR("ItemId{}"), IndexString);
+			auto ItemIdWithSuffix = fmt::format(STR("ItemId{}"), IndexString);
 			auto ItemIdProperty = RowStruct->GetPropertyByName(ItemIdWithSuffix.c_str());
 			if (!ItemIdProperty)
 			{
 				throw std::runtime_error(std::format("Property 'ItemId{}' doesn't exist in DT_PalDropItem, Pal Schema needs an update.", Index));
 			}
 
-			auto RateWithSuffix = PS::Format(STR("Rate{}"), IndexString);
+			auto RateWithSuffix = fmt::format(STR("Rate{}"), IndexString);
 			auto RateProperty = RowStruct->GetPropertyByName(RateWithSuffix.c_str());
 			if (!RateProperty)
 			{
 				throw std::runtime_error(std::format("Property 'Rate{}' doesn't exist in DT_PalDropItem, Pal Schema needs an update.", Index));
 			}
 
-			auto MaxWithSuffix = PS::Format(STR("Max{}"), IndexString);
+			auto MaxWithSuffix = fmt::format(STR("Max{}"), IndexString);
 			auto MaxProperty = RowStruct->GetPropertyByName(MaxWithSuffix.c_str());
 			if (!MaxProperty)
 			{
 				throw std::runtime_error(std::format("Property 'Max{}' doesn't exist in DT_PalDropItem, Pal Schema needs an update.", Index));
 			}
 
-			auto MinWithSuffix = PS::Format(STR("min{}"), IndexString);
+			auto MinWithSuffix = fmt::format(STR("min{}"), IndexString);
 			auto MinProperty = RowStruct->GetPropertyByName(MinWithSuffix.c_str());
 			if (!MinProperty)
 			{
@@ -485,7 +485,7 @@ namespace Palworld {
 			}
 		}
 
-		auto RowName = PS::Format(STR("{}000"), CharacterId.ToString());
+		auto RowName = fmt::format(STR("{}000"), CharacterId.ToString());
 		m_palDropItemTable->AddRow(FName(RowName, FNAME_Add), *reinterpret_cast<RC::Unreal::FTableRowBase*>(PalDropItemData));
 	}
 
@@ -493,7 +493,7 @@ namespace Palworld {
 	{
 		if (Data.contains("Name"))
 		{
-			auto FixedCharacterId = PS::Format(STR("PAL_NAME_{}"), CharacterId.ToString());
+			auto FixedCharacterId = fmt::format(STR("PAL_NAME_{}"), CharacterId.ToString());
 			auto TranslationRowStruct = m_palNameTable->GetRowStruct().Get();
 			auto TextProperty = TranslationRowStruct->GetPropertyByName(STR("TextData"));
 			if (TextProperty)
@@ -517,7 +517,7 @@ namespace Palworld {
 
 		if (Data.contains("ShortDescription"))
 		{
-			auto FixedCharacterId = PS::Format(STR("PAL_SHORT_DESC_{}"), CharacterId.ToString());
+			auto FixedCharacterId = fmt::format(STR("PAL_SHORT_DESC_{}"), CharacterId.ToString());
 			auto TranslationRowStruct = m_palShortDescTable->GetRowStruct().Get();
 			auto TextProperty = TranslationRowStruct->GetPropertyByName(STR("TextData"));
 			if (TextProperty)
@@ -541,7 +541,7 @@ namespace Palworld {
 
 		if (Data.contains("LongDescription"))
 		{
-			auto FixedCharacterId = PS::Format(STR("PAL_LONG_DESC_{}"), CharacterId.ToString());
+			auto FixedCharacterId = fmt::format(STR("PAL_LONG_DESC_{}"), CharacterId.ToString());
 			auto TranslationRowStruct = m_palLongDescTable->GetRowStruct().Get();
 			auto TextProperty = TranslationRowStruct->GetPropertyByName(STR("TextData"));
 			if (TextProperty)
@@ -568,7 +568,7 @@ namespace Palworld {
 	{
 		if (Data.contains("Name"))
 		{
-			auto FixedCharacterId = PS::Format(STR("PAL_NAME_{}"), CharacterId.ToString());
+			auto FixedCharacterId = fmt::format(STR("PAL_NAME_{}"), CharacterId.ToString());
 			auto TranslationRowStruct = m_palNameTable->GetRowStruct().Get();
 			auto TextProperty = TranslationRowStruct->GetPropertyByName(STR("TextData"));
 			if (TextProperty)
@@ -583,7 +583,7 @@ namespace Palworld {
 
 		if (Data.contains("ShortDescription"))
 		{
-			auto FixedCharacterId = PS::Format(STR("PAL_SHORT_DESC_{}"), CharacterId.ToString());
+			auto FixedCharacterId = fmt::format(STR("PAL_SHORT_DESC_{}"), CharacterId.ToString());
 			auto TranslationRowStruct = m_palShortDescTable->GetRowStruct().Get();
 			auto TextProperty = TranslationRowStruct->GetPropertyByName(STR("TextData"));
 			if (TextProperty)
@@ -598,7 +598,7 @@ namespace Palworld {
 
 		if (Data.contains("LongDescription"))
 		{
-			auto FixedCharacterId = PS::Format(STR("PAL_LONG_DESC_{}"), CharacterId.ToString());
+			auto FixedCharacterId = fmt::format(STR("PAL_LONG_DESC_{}"), CharacterId.ToString());
 			auto TranslationRowStruct = m_palLongDescTable->GetRowStruct().Get();
 			auto TextProperty = TranslationRowStruct->GetPropertyByName(STR("TextData"));
 			if (TextProperty)

@@ -3,7 +3,6 @@
 #include <HAL/Platform.hpp>
 #include <DynamicOutput/DynamicOutput.hpp>
 #include "Utility/Config.h"
-#include "Utility/PSFormat.h"
 
 namespace PS {
     template <RC::Unreal::int32 optional_arg, typename... FmtArgs>
@@ -11,26 +10,22 @@ namespace PS {
     {
         if (optional_arg == RC::LogLevel::Error)
         {
-            auto formatted_log = PS::Format(STR("[PalSchema] [error] {}"), content);
-            RC::Output::send<optional_arg>(formatted_log, fmt_args...);
+            RC::Output::send<optional_arg>(STR("[PalSchema] [error] {}"), content, fmt_args...);
         }
         else if (optional_arg == RC::LogLevel::Warning)
         {
-            auto formatted_log = PS::Format(STR("[PalSchema] [warning] {}"), content);
-            RC::Output::send<optional_arg>(formatted_log, fmt_args...);
+            RC::Output::send<optional_arg>(STR("[PalSchema] [warning] {}"), content, fmt_args...);
         }
         else if (optional_arg == RC::LogLevel::Verbose)
         {
             auto config = PS::PSConfig::Get();
             if (!config->IsDebugLoggingEnabled()) return;
 
-            auto formatted_log = PS::Format(STR("[PalSchema] [debug] {}"), content);
-            RC::Output::send<optional_arg>(formatted_log, fmt_args...);
+            RC::Output::send<optional_arg>(STR("[PalSchema] [debug] {}"), content, fmt_args...);
         }
         else
         {
-            auto formatted_log = PS::Format(STR("[PalSchema] {}"), content);
-            RC::Output::send<optional_arg>(formatted_log, fmt_args...);
+            RC::Output::send<optional_arg>(STR("[PalSchema] {}"), content, fmt_args...);
         }
     }
 }

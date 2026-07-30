@@ -340,7 +340,7 @@ namespace Palworld {
         PS::Log<LogLevel::Verbose>(STR("Preparing to add extra .pak read directory...\n"));
         auto ModsFolderPath = GetModsPath();
         auto AbsolutePath = ModsFolderPath.native();
-        auto AbsolutePathWithSuffix = PS::Format(STR("{}/"), RC::to_generic_string(AbsolutePath));
+        auto AbsolutePathWithSuffix = fmt::format(STR("{}/"), RC::to_generic_string(AbsolutePath));
 
         PS::Log<LogLevel::Verbose>(STR("Setting extra .pak read directory to {}\n"), AbsolutePathWithSuffix);
 

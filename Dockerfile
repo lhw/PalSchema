@@ -26,7 +26,7 @@ RUN export PATH="/root/.cargo/bin:${PATH}" && \
     cmake -B build_palschema \
       -G Ninja \
       -DCMAKE_BUILD_TYPE=Game__Shipping__Linux64 && \
-    cmake --build build_palschema --verbose 2>&1 | tail -100
+    cmake --build build_palschema
 
 # Runtime stage - minimal image with just the built .so
 FROM --platform=linux/amd64 ubuntu:24.04 AS runtime
