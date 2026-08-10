@@ -56,15 +56,32 @@ namespace Palworld {
         GetPakFoldersCallback.clear();
     }
 
-    void PalMainLoader::PreInitialize()
-    {
-        HookDatatableSerialize();
-        SetupAlternativePakPathReader();
-    }
+	void PalMainLoader::PreInitialize()
+	{
+#ifndef _WIN32
+        // Manual Linux addresses are available before UE4SS's Unreal callback.
+        // Install these early so startup table/pak work is not missed.
+#endif
+		HookDatatableSerialize();
+		SetupAlternativePakPathReader();
+	}
 
-    void PalMainLoader::Initialize()
+	void PalMainLoader::Initialize()
 	{
         SetupAutoReload();
+#ifndef _WIN32
+        if (!m_processEventInitRegistered)
+        {
+            m_processEventInitRegistered = true;
+            Hook::RegisterProcessEventPreCallback([this](UObject*, UFunction*, void*) {
+                if (!m_hasInit)
+                {
+                    InitCore();
+                }
+            });
+            PS::Log<LogLevel::Normal>(STR("Linux: deferred PalSchema core initialization to ProcessEvent.\n"));
+        }
+#endif
 	}
 
     void PalMainLoader::AutoReload(const std::filesystem::path& filePath)

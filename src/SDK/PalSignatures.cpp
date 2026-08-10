@@ -167,23 +167,16 @@ namespace Palworld {
         Ini::Parser parser;
         parser.parse(FileContents);
 
-        // Read addresses from [Signatures] section
-        // Format: FunctionName=0xADDRESS
+        // Read addresses from [Signatures] section.
+        // Values are hexadecimal with or without a 0x prefix.
         auto entries = parser.get_list(STR("Signatures"));
         entries.for_each([&](const auto& key, auto& value) {
             std::string func_name = RC::to_utf8_string(key);
             std::string addr_str = RC::to_utf8_string(value.get_string_value());
 
-            // Parse hex address (0x prefix)
+            // Parse hex address (the 0x prefix is optional).
             void* addr = nullptr;
-            if (addr_str.starts_with("0x") || addr_str.starts_with("0X"))
-            {
-                addr = reinterpret_cast<void*>(std::stoull(addr_str, nullptr, 16));
-            }
-            else
-            {
-                addr = reinterpret_cast<void*>(std::stoull(addr_str, nullptr, 10));
-            }
+            addr = reinterpret_cast<void*>(std::stoull(addr_str, nullptr, 16));
 
             if (addr)
             {

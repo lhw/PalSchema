@@ -1,6 +1,6 @@
 # PalSchema Linux Port Plan
 
-## Status: Compiling ✅ (branch: `linux-port`)
+## Status: Runtime validation in progress ✅ (branch: `linux-port`)
 
 ---
 
@@ -127,34 +127,78 @@ Functions requiring signatures:
 10. `FName::Constructor` — Early init
 11. `UPalItemContainer::ApplySaveData`
 12. `UPalDynamicItemWorldSubsystem::ApplyWorldSaveData`
-13. `ValidateWorldSaveDynamicItemStaticIds`
-14. `ValidateDynamicItemSaveData`
-15. `FFieldClass::GetNameToFieldClassMap` (call-resolved)
-16. `FName::ToString_Wchar` (call-resolved)
-17. `GetObjectsOfClass` (call-resolved)
-18. `FMemory::Free` (call-resolved) — Used for GMalloc
-19. `UDataTable::Serialize` (call-resolved)
-20. `UPalDynamicItemWorldSubsystem::Create_ServerInternal` (call-resolved)
-21. `UPalItemSlot::UpdateItem_ServerInternal` (call-resolved)
-22. `UWorld::CleanupWorld` (call-resolved)
+13. `FFieldClass::GetNameToFieldClassMap` (call-resolved)
+14. `FName::ToString_Wchar` (call-resolved)
+15. `GetObjectsOfClass` (call-resolved)
+16. `FMemory::Free` (call-resolved) — Used for GMalloc
+17. `UDataTable::Serialize` (call-resolved)
+18. `UPalDynamicItemWorldSubsystem::Create_ServerInternal` (call-resolved)
+19. `UPalItemSlot::UpdateItem_ServerInternal` (call-resolved)
+20. `UWorld::CleanupWorld` (call-resolved)
 
-### Linux Approach
-- **AOB scanning**: `ScanTarget::MainExe` is populated via `dl_iterate_phdr` (same interface as Windows). If correct Linux AOB patterns are provided, scanning works identically.
-- **Manual addresses**: `PalSchema_Addresses.ini` — INI file with `[Signatures]` section, format `FunctionName=0xADDRESS`
-- **dlsym**: Only works for exported symbols (unlikely for internal UE4/Palworld functions)
+### Linux Approach (3 Methods)
+
+**Method 1: VTable + UFunction Path (no AOB needed — 5 hooks)**
+These hooks use `StaticFindObject` to find the class CDO, then read the vtable pointer and index into a specific slot. They work automatically without any signatures:
+- `UPalGameInstance::Init` — VTable[90]
+- `UBlueprintGeneratedClass::PostLoad` — VTable[20]
+- `AActor::PostInitializeComponents` — VTable[159]
+- `OnLevelShown` / `OnLevelHidden` — UFunction path lookup via `StaticFindObject<UFunction*>`
+
+**Method 2: UE4SS `RegisterHook` Lua API (not usable in the current stripped server)**
+UE4SS documents name-based UFUNCTION hooks, but the current Linux runtime crashes while setting up Lua/reflection and while calling the Lua reflection probes. C++ mod startup and `on_unreal_init()` do work; this is a reflection/runtime limitation, not an unknown init sequence. Do not treat the `_ServerInternal` suffix as proof that a hook is safe.
+
+**Method 3: AOB Patterns / Manual Addresses**
+These require function addresses found via reverse engineering:
+- `UDataTable::Serialize` (call-resolved)
+- `FPakPlatformFile::GetPakFolders` (direct)
+- `UPalItemContainer::ApplySaveData` (post-call return sentinel used by the detour)
+- `UPalItemSlot::UpdateItem_ServerInternal` (direct call target)
+- `UWorld::CleanupWorld` (call-resolved)
+- `UPalDynamicItemWorldSubsystem::Create_ServerInternal` (direct call target)
+
+The current cleanup investigation has a rejected candidate at `0x47F1D10`:
+it writes `UWorld::CleanupWorldTag` and is called on world pointers, but the
+observed ABI consumes only one boolean while the existing PalSchema hook takes
+three post-`this` arguments. It must remain unset until the ABI is resolved.
 
 ### GMalloc Resolution
-- `UnrealOffsets::InitializeGMalloc()` uses Zydis to decode x86 instructions after `FMemory::Free`
-- On Linux, the instruction encoding (x86-64) is the same ISA, but the specific byte patterns differ
-- The `FMemory::Free` signature is Windows-specific, so this function won't work on Linux without a Linux-specific signature
-- **Impact**: `TArray::Add` in `GetPakFolders` hook won't work without GMalloc. This hook is only set up via Windows AOB scan anyway, so it's a cascade failure.
+- **On Linux**: `UnrealOffsets::ResolveFromUE4SS()` resolves `GMalloc` via `UnrealInitializer::LoadExport("GMalloc")` (dlsym) — this works without any AOB patterns
+- Fallback: Zydis-based `FMemory::Free` scan (Windows-specific, won't work on Linux)
+- **The `GetPakFolders` hook** is needed to add the mod pak directory, not for GMalloc
 
-### How to Get Linux AOB Patterns
-1. Procure `PalServer-Linux-Shipping` binary from `palworld-server-docker` volume
-2. Load in Ghidra/IDA Pro with ELF loader
-3. Identify each function by name (if unstripped) or by cross-references
-4. Extract byte patterns from function prologues
-5. Test patterns with `patternsleuth` or custom scanner
+### How to Get Linux Function Addresses
+
+**Option A: Ghidra (most reliable)**
+1. Copy `PalServer-Linux-Shipping` from `palworld-server-docker` volume
+2. Load in Ghidra with ELF loader
+3. Binary is **stripped** (no symbols) — functions must be identified by cross-references or known UE4 patterns
+4. Search for UFunction names in reflection data (FName entries)
+5. Extract function addresses
+
+**Option B: UE4SS runtime reflection (currently blocked)**
+- UE4SS's documented Lua/reflection path crashes during setup on this stripped binary.
+- A C++ `ForEachUObject`/`UFunction` probe also failed inside the same recovered callback before producing stable metadata.
+- Runtime reflection is therefore evidence for a future UE4SS fix, not a source of current Linux addresses.
+
+**Option C: Community resources**
+- Check if Linux Palworld AOB patterns exist in UE4SS community
+- Check `find_ps_scan.sh` in UE4SS repo for known patterns
+
+### UE4SS Reflection Limitation (Known Issue)
+UE4SS Linux reaches native C++ mod loading on the stripped PalServer binary,
+but its broad UObject iteration and some Lua/property setup paths can signal
+11. Crash recovery keeps the server running. The documented name-based
+reflection route is therefore not a reliable source of addresses here;
+external static analysis is being used instead. This is a runtime API
+limitation, not an unknown PalSchema init sequence.
+
+Ghidra `-noanalysis` import independently identified the Palworld vtables for
+`UPalItemContainer`, `UPalItemSlot`, `UPalDynamicItemWorldSubsystem`, and
+`UWorld`. The dynamic-item vtable slot agrees with the existing
+`ApplyWorldSaveData` address. The ordinary-item target was recovered from the
+item-container save-loop call site and its post-call return sentinel. No
+`UWorld::CleanupWorld` address has met the same evidence standard.
 
 ---
 
@@ -206,21 +250,34 @@ docker build -t palschema-linux .
 
 ### Mod Directory Structure (Linux)
 ```
-/palworld/Pal/Binaries/Linux/Mods/
-├── mods.txt                          # "PalSchema : 1"
-└── PalSchema/
-    ├── libs/
-    │   └── libPalSchema.so           # The built mod
-    └── PalSchema_Addresses.ini       # Manual addresses (if needed)
+/palworld/UE4SS/
+├── UE4SS-settings.ini                # UE4SS config (ModsFolderPath=/palworld/UE4SS/Mods)
+├── libUE4SS.so                       # UE4SS library
+└── Mods/
+    ├── mods.txt                      # "PalSchema : 1"
+    └── PalSchema/
+        └── libs/
+            └── libPalSchema.so       # The built mod
 ```
 
 ### Loading
 ```bash
 # UE4SS is loaded via LD_PRELOAD
-LD_PRELOAD=/opt/ue4ss/libUE4SS.so ./PalServer-Linux-Shipping
+LD_PRELOAD=/palworld/UE4SS/libUE4SS.so ./PalServer-Linux-Shipping
 
-# UE4SS discovers Mods/PalSchema/mods.txt, loads libs/libPalSchema.so
+# UE4SS reads UE4SS-settings.ini, finds ModsFolderPath
+# Discovers PalSchema mod (C++ mod in libs/), loads libs/libPalSchema.so
 # Calls start_mod() → PalSchema constructor runs
+```
+
+### UE4SSSettings.ini
+```ini
+[Debug]
+DebugConsoleEnabled=false
+SimpleConsoleEnabled=true
+
+[Overrides]
+ModsFolderPath=/palworld/UE4SS/Mods
 ```
 
 ---
@@ -252,11 +309,20 @@ volumes:
 - [x] **Test compilation** — `docker build` produces `libPalSchema.so` (0 errors, 0 warnings from our code)
 
 ### Core Functionality (to get mod working)
-- [ ] **Procure PalServer Linux binary** — Extract from palworld-server-docker volume
-- [ ] **Derive Linux AOB patterns** — Scan the ELF binary for each of the 22 functions
-- [ ] **Populate PalSchema_Addresses.ini** — Fill in actual addresses
-- [ ] **Test GMalloc resolution** — Verify Zydis decoding works on Linux instruction patterns
-- [ ] **Test hook setup** — Verify funchook works with Linux function addresses
+- [x] **Procure PalServer Linux binary** — Extract from palworld-server-docker volume
+- [~] **Derive Linux AOB patterns** — Static ELF/Ghidra evidence recovered the ordinary-item pair; world cleanup remains
+- [~] **Populate PalSchema_Addresses.ini** — Six usable ELF-derived entries are populated; `UWorld::CleanupWorld` remains unset
+- [x] **Test GMalloc resolution** — UE4SS-side Linux resolution supplies `GMalloc`; the Windows Zydis fallback remains unused
+- [~] **Test hook setup** — v41 loads the manual entries and returns from `on_unreal_init()` without a PalSchema crash; deferred core init has not yet exercised the item loader
+- [~] **Test deferred core initialization** — v36 registers the UE4SS `ProcessEvent` callback successfully; an idle dedicated server has not fired it yet
+- [x] **Use UE4SS-native field helpers where safe** — Linux field-class lookup and `FField::IsA` no longer require guessed Palworld addresses
+
+### Exact continuation point
+- [~] Recover `UWorld::CleanupWorld` with an ABI-matched target; do not use the `0x47F1D10` lead yet
+- [ ] Obtain a safe normal server/client event that fires the deferred `ProcessEvent` callback
+- [ ] Runtime-prove ordinary-item update/save and dynamic-item callbacks
+- [ ] Runtime-prove datatable, pak-path, and spawn-cleanup behavior independently
+- [ ] Remove or isolate temporary diagnostics before any production deployment
 
 ### Polish
 - [ ] Guard remaining ImGui code (already done for dllmain.cpp, check other files)

@@ -41,18 +41,42 @@ void Palworld::UnrealOffsets::Initialize()
 
     PS::Log<LogLevel::Verbose>(STR("Unreal Version set to {}.{}.\n"), Unreal::Version::Major, Unreal::Version::Minor);
 
+    // On Linux, UE4SS resolves FName via dlsym before loading C++ mods.
+    // Only overwrite if we actually found a signature (non-null).
     auto FNameConstructorAddress = Palworld::SignatureManager::GetSignature("FName::Constructor");
-    FName::ConstructorInternal.assign_address(FNameConstructorAddress);
-    PS::Log<LogLevel::Verbose>(STR("FName::Constructor was assigned address of {}\n"), FNameConstructorAddress);
+    if (FNameConstructorAddress)
+    {
+        FName::ConstructorInternal.assign_address(FNameConstructorAddress);
+    }
+    PS::Log<LogLevel::Verbose>(STR("FName::Constructor address: {}\n"), FName::ConstructorInternal.get_function_address());
 
     auto FNameToStringAddress = Palworld::SignatureManager::GetSignature("FName::ToString_Wchar");
-    FName::ToStringInternal.assign_address(FNameToStringAddress);
-    PS::Log<LogLevel::Verbose>(STR("FName::ToString was assigned address of {}\n"), FNameToStringAddress);
+    if (FNameToStringAddress)
+    {
+        FName::ToStringInternal.assign_address(FNameToStringAddress);
+    }
+    PS::Log<LogLevel::Verbose>(STR("FName::ToString address: {}\n"), FName::ToStringInternal.get_function_address());
 
+#ifdef _WIN32
     ApplyMemberVariableLayout();
+#endif
 
+#ifndef _WIN32
+    // On Linux, UE4SS already called InitializeVersionedContainer() during its own init.
+    // Calling it again can crash. Check if it's already been initialized.
+    if (!UnrealInitializer::StaticStorage::bVersionedContainerIsInitialized)
+    {
+        UnrealInitializer::InitializeVersionedContainer();
+        PS::Log<LogLevel::Verbose>(STR("Versioned Container initialized.\n"));
+    }
+    else
+    {
+        PS::Log<LogLevel::Verbose>(STR("Versioned Container already initialized by UE4SS, skipping.\n"));
+    }
+#else
     UnrealInitializer::InitializeVersionedContainer();
     PS::Log<LogLevel::Verbose>(STR("Versioned Container initialized.\n"));
+#endif
 }
 
 void Palworld::UnrealOffsets::ResolveFromUE4SS()

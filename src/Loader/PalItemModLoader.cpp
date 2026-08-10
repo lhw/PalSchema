@@ -424,63 +424,40 @@ namespace Palworld {
 
     void PalItemModLoader::SetupHooks()
     {
+        auto updateItemAddress = Palworld::SignatureManager::GetSignature("UPalItemSlot::UpdateItem_ServerInternal");
+        ApplyItemSaveDataAddress = Palworld::SignatureManager::GetSignature("UPalItemContainer::ApplySaveData");
+
         try
         {
-            auto address = Palworld::SignatureManager::GetSignature("UPalItemSlot::UpdateItem_ServerInternal");
-            if (!address)
+            if (!updateItemAddress || !ApplyItemSaveDataAddress)
             {
-                throw std::runtime_error("Signature for UPalItemSlot::UpdateItem_ServerInternal could not be found");
+                throw std::runtime_error("UPalItemSlot::UpdateItem_ServerInternal or UPalItemContainer::ApplySaveData is missing");
             }
 
-            ApplyItemSaveDataAddress = Palworld::SignatureManager::GetSignature("UPalItemContainer::ApplySaveData");
-            if (!ApplyItemSaveDataAddress)
-            {
-                throw std::runtime_error("Signature for UPalItemContainer::ApplySaveData could not be found");
-            }
-
-            auto address2 = Palworld::SignatureManager::GetSignature("UPalDynamicItemWorldSubsystem::Create_ServerInternal");
-            if (!address2)
-            {
-                throw std::runtime_error("Signature for UPalDynamicItemWorldSubsystem::Create_ServerInternal could not be found");
-            }
-
-            ApplyDynamicItemSaveDataAddress = Palworld::SignatureManager::GetSignature("UPalDynamicItemWorldSubsystem::ApplyWorldSaveData");
-            if (!ApplyDynamicItemSaveDataAddress)
-            {
-                throw std::runtime_error("Signature for UPalDynamicItemWorldSubsystem::ApplyWorldSaveData could not be found");
-            }
-
-            auto address3 = Palworld::SignatureManager::GetSignature("ValidateWorldSaveDynamicItemStaticIds");
-            if (!address3)
-            {
-                throw std::runtime_error("Signature for ValidateWorldSaveDynamicItemStaticIds could not be found");
-            }
-
-            auto address4 = Palworld::SignatureManager::GetSignature("ValidateDynamicItemSaveData");
-            if (!address4)
-            {
-                throw std::runtime_error("Signature for ValidateDynamicItemSaveData could not be found");
-            }
-
-            UpdateItem_ServerInternalHook = safetyhook::create_inline(reinterpret_cast<void*>(address),
+            UpdateItem_ServerInternalHook = safetyhook::create_inline(reinterpret_cast<void*>(updateItemAddress),
                 UpdateItem_Detour);
-
-            DynamicItemHook = safetyhook::create_inline(reinterpret_cast<void*>(address2),
-                CreateDynamicItemDatabase_Detour);
-
-            // If I have to add anymore detours and signatures for this functionality I'm going to lose it
-            // Probably a good reason to finally look into how the FPalMemoryReader works
-
-            ValidateWorldSaveDynamicItemStaticIdsHook = safetyhook::create_inline(reinterpret_cast<void*>(address3),
-                ValidateWorldSaveDynamicItemStaticIds);
-
-            ValidateDynamicItemSaveDataHook = safetyhook::create_inline(reinterpret_cast<void*>(address4),
-                ValidateDynamicItemSaveData);
         }
         catch (const std::exception& e)
         {
-            PS::Log<LogLevel::Error>(TEXT("{}. PalSchema will be unable to clean up invalid items and worlds with invalid items will crash on load.\n"), 
-                                     RC::to_generic_string(e.what()));
+            PS::Log<LogLevel::Error>(TEXT("{}. Ordinary invalid-item cleanup is unavailable.\n"), RC::to_generic_string(e.what()));
+        }
+
+        auto createDynamicItemAddress = Palworld::SignatureManager::GetSignature("UPalDynamicItemWorldSubsystem::Create_ServerInternal");
+        ApplyDynamicItemSaveDataAddress = Palworld::SignatureManager::GetSignature("UPalDynamicItemWorldSubsystem::ApplyWorldSaveData");
+
+        try
+        {
+            if (!createDynamicItemAddress || !ApplyDynamicItemSaveDataAddress)
+            {
+                throw std::runtime_error("UPalDynamicItemWorldSubsystem::Create_ServerInternal or ApplyWorldSaveData is missing");
+            }
+
+            DynamicItemHook = safetyhook::create_inline(reinterpret_cast<void*>(createDynamicItemAddress),
+                CreateDynamicItemDatabase_Detour);
+        }
+        catch (const std::exception& e)
+        {
+            PS::Log<LogLevel::Error>(TEXT("{}. Dynamic invalid-item cleanup is unavailable.\n"), RC::to_generic_string(e.what()));
         }
     }
 
@@ -528,13 +505,4 @@ namespace Palworld {
         return DynamicItemHook.call<UPalDynamicItemDataBase*>(self, dynamicItemId, staticId, itemCreateParam);
     }
 
-    bool PalItemModLoader::ValidateWorldSaveDynamicItemStaticIds(UObject* idk, UObject* SaveGame,FString& idk3, FString& idk4)
-    {
-        return true;
-    }
-
-    bool PalItemModLoader::ValidateDynamicItemSaveData(void* idk, UObject* DynamicItemDataBase, UObject* ItemIDManager, const RC::StringType& idk2)
-    {
-        return true;
-    }
 }

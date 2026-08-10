@@ -67,7 +67,12 @@ namespace PS {
 
     std::filesystem::path PSConfig::GetConfigPath()
     {
+#ifndef _WIN32
+        // ponytail: Linux deployment has a fixed UE4SS root; use it instead of the unsafe cross-module accessor.
+        static auto path = fs::path("/palworld/UE4SS") / "Mods" / "PalSchema" / "config";
+#else
         static auto path = fs::path(RC::UE4SSProgram::get_program().get_working_directory()) / "Mods" / "PalSchema" / "config";
+#endif
         return path;
     }
 

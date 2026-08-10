@@ -1,0 +1,32 @@
+-- UE4SS Signature Override: GMalloc
+--
+-- The PalServer Linux binary is stripped. This file tells UE4SS where to find GMalloc.
+--
+-- GMalloc is a global variable of type FMalloc** (pointer to pointer).
+-- On Linux, UE4SS searches for it by:
+-- 1. Finding the "/proc/meminfo" string reference
+-- 2. Finding the function containing FUnixPlatformMemory::GetStats
+-- 3. Cross-referencing to FMemory::GCreateMalloc
+-- 4. Finding two identical "mov rdi, [rip+disp32]" instructions within 20 bytes
+-- 5. The displacement points to GMalloc
+--
+-- Option 1: Return the address directly (if you know it from Ghidra)
+-- Option 2: Use AOB scanning (if you have a byte pattern)
+
+-- Option 1: Direct address (uncomment and replace 0x0 with actual address)
+return 0x0
+
+-- Option 2: AOB scanning (uncomment if you have a byte pattern)
+-- function Register()
+--     return "YOUR_AOB_PATTERN_HERE"
+-- end
+--
+-- function OnMatchFound(MatchAddress)
+--     -- If the AOB directly points to GMalloc, return MatchAddress
+--     -- If the AOB is in code that references GMalloc via RIP-relative addressing:
+--     --   local disp_offset = MatchAddress + OFFSET_TO_DISPLACEMENT
+--     --   local disp = DerefToInt32(disp_offset)
+--     --   local target = disp_offset + 4 + disp
+--     --   return target
+--     return MatchAddress
+-- end

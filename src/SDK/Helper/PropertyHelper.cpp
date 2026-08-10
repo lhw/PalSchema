@@ -617,6 +617,9 @@ namespace Palworld {
 
     TMap<FName, FFieldClass*>* PropertyHelper::GetNameToFieldClassMap()
     {
+#ifndef _WIN32
+        return &RC::Unreal::FFieldClass::GetNameToFieldClassMap();
+#else
         using GetNameToFieldClassMap_Signature = TMap<FName, FFieldClass*>*(*)();
         static GetNameToFieldClassMap_Signature GetNameToFieldClassMap_Internal = nullptr;
 
@@ -634,10 +637,14 @@ namespace Palworld {
         }
 
         return GetNameToFieldClassMap_Internal();
+#endif
     }
 
     bool PropertyHelper::IsPropertyA(RC::Unreal::FField* Field, RC::Unreal::FFieldClass* FieldClass)
     {
+#ifndef _WIN32
+        return Field && Field->IsA(FieldClass);
+#else
         using IsA_Signature = bool(*)(FField*, FFieldClass*);
         static IsA_Signature IsA_Internal = nullptr;
 
@@ -655,5 +662,6 @@ namespace Palworld {
         }
 
         return IsA_Internal(Field, FieldClass);
+#endif
     }
 }
